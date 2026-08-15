@@ -1,0 +1,3 @@
+(executable
+ (name uniker)
+ (libraries uniker yocaml yocaml_unix))

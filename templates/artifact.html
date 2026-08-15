@@ -1,0 +1,51 @@
+<h1>{{ name }}</h1>
+{%- if description %}
+<p class="lede">{{ description }}</p>
+{%- endif %}
+<dl class="meta">
+  {%- if version %}
+  <div><dt>Version</dt><dd class="version">{{ version }}</dd></div>
+  {%- endif %}
+  {%- if kind %}
+  <div><dt>Kind</dt><dd>{{ kind }}</dd></div>
+  {%- endif %}
+  {%- if repo %}
+  <div><dt>Source</dt><dd><a href="{{ repo }}">{{ repo }}</a></dd></div>
+  {%- endif %}
+  {%- if homepage %}
+  <div><dt>Homepage</dt><dd><a href="{{ homepage }}">{{ homepage }}</a></dd></div>
+  {%- endif %}
+  {%- if authors %}
+  <div>
+    <dt>Authors</dt>
+    <dd class="people">
+      {%- for person in authors %}
+      {% if person.url %}<a class="person" href="{{ person.url }}">{% else %}<span class="person">{% endif %}
+        <img src="{{ person.gravatar }}" alt="" width="24" height="24" loading="lazy">{{ person.name }}
+      {% if person.url %}</a>{% else %}</span>{% endif %}
+      {%- endfor %}
+    </dd>
+  </div>
+  {%- endif %}
+  {%- if maintainers %}
+  <div>
+    <dt>Maintainers</dt>
+    <dd class="people">
+      {%- for person in maintainers %}
+      {% if person.url %}<a class="person" href="{{ person.url }}">{% else %}<span class="person">{% endif %}
+        <img src="{{ person.gravatar }}" alt="" width="24" height="24" loading="lazy">{{ person.name }}
+      {% if person.url %}</a>{% else %}</span>{% endif %}
+      {%- endfor %}
+    </dd>
+  </div>
+  {%- endif %}
+  {%- if tags %}
+  <div>
+    <dt>Tags</dt>
+    <dd class="tags">{% for tag in tags %}<span class="tag">{{ tag }}</span>{% endfor %}</dd>
+  </div>
+  {%- endif %}
+</dl>
+{%- autoescape false -%}
+{{ yocaml_body }}
+{%- endautoescape -%}

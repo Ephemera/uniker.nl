@@ -1,0 +1,37 @@
+<h1>{{ title }}</h1>
+{%- if description %}
+<p class="lede">{{ description }}</p>
+{%- endif %}
+{%- autoescape false -%}
+{{ yocaml_body }}
+{%- endautoescape -%}
+<input
+  type="search"
+  id="filter"
+  class="filter"
+  placeholder="Filter by name, tag or kind…"
+  aria-label="Filter the list"
+  autocomplete="off">
+<ul class="cards" id="cards">
+  {%- for item in items %}
+  <li class="card" data-search="{{ item.search }}">
+    <a class="card-link" href="{{ item.url }}">
+      <span class="card-head">
+        <span class="card-name">{{ item.name }}</span>
+        {%- if item.version %}<span class="card-version">{{ item.version }}</span>{% endif %}
+      </span>
+      {%- if item.description %}
+      <span class="card-desc">{{ item.description }}</span>
+      {%- endif %}
+    </a>
+    {%- if item.kind or item.tags %}
+    <span class="tags">
+      {%- if item.kind %}<span class="tag kind">{{ item.kind }}</span>{% endif %}
+      {%- for tag in item.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </span>
+    {%- endif %}
+  </li>
+  {%- endfor %}
+</ul>
+<p class="empty" id="empty" hidden>Nothing matches your filter.</p>
+<script src="/static/catalog.js"></script>

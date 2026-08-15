@@ -1,0 +1,27 @@
+<h1>{{ site_title }}</h1>
+{%- if site_description %}
+<p class="lede">{{ site_description }}</p>
+{%- endif %}
+{%- autoescape false -%}
+{{ yocaml_body }}
+{%- endautoescape -%}
+<div class="landing">
+  <a class="tile" href="/introduction/">
+    <h2>Tutorial</h2>
+    <p>A hands-on book: build a unikernel in OCaml from the first line to a
+    running network service.</p>
+    <span class="go">Start reading →</span>
+  </a>
+  <a class="tile" href="/packages/">
+    <h2>Packages</h2>
+    <p>The libraries and tools the ecosystem is made of - Solo5, the TLS stack,
+    the build and deployment utilities.</p>
+    <span class="go">Browse packages →</span>
+  </a>
+  <a class="tile" href="/unikernels/">
+    <h2>Unikernels</h2>
+    <p>Ready-made unikernels: what each one does, how to configure it and how to
+    deploy it.</p>
+    <span class="go">Browse unikernels →</span>
+  </a>
+</div>

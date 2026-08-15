@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} — {{ site_title }}</title>
+    <meta name="description" content="{{ description }}">
+    <link rel="stylesheet" href="/pagefind/pagefind-component-ui.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script type="module" src="/pagefind/pagefind-component-ui.js"></script>
+    <script>
+      /* Applied before the first paint, so a reader who chose a scheme never
+         sees the other one flash by. */
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored) document.documentElement.dataset.theme = stored;
+      } catch (_) {}
+    </script>
+  </head>
+  <body>
+    <pagefind-config show-images="false" show-sub-results="true" data-pagefind-ignore></pagefind-config>
+    <details id="summary" open data-pagefind-ignore>
+      <summary>{{ site_title }}</summary>
+      <nav>
+        <a class="book" href="/">{{ site_title }}</a>
+        <pagefind-modal-trigger id="search"></pagefind-modal-trigger>
+        <ul class="zones">
+          {%- for zone in site_nav %}
+          <li{% if zone.current %} class="current"{% endif %}><a href="{{ zone.url }}">{{ zone.label }}</a></li>
+          {%- endfor %}
+        </ul>
+        {%- for part in nav %}
+        <h2>{{ part.title }}</h2>
+        {%- if part.ordered %}
+        <ol>
+          {%- for entry in part.entries %}
+          <li{% if entry.current %} class="current"{% endif %}>
+            <a href="{{ entry.url }}">{{ entry.title }}</a>
+            {%- if entry.current and entry.sections -%}
+            {% autoescape false %}{{ entry.sections }}{% endautoescape %}
+            {%- endif -%}
+          </li>
+          {%- endfor %}
+        </ol>
+        {%- else %}
+        <ul class="catalog-nav">
+          {%- for entry in part.entries %}
+          <li{% if entry.current %} class="current"{% endif %}>
+            <a href="{{ entry.url }}">{{ entry.title }}</a>
+            {%- if entry.current and entry.sections -%}
+            {% autoescape false %}{{ entry.sections }}{% endautoescape %}
+            {%- endif -%}
+          </li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+        {%- endfor %}
+        <button id="theme" type="button" aria-label="Change the colour scheme"></button>
+      </nav>
+    </details>
+    <main data-pagefind-body>
+      {%- autoescape false -%}
+      {{ yocaml_body }}
+      {%- endautoescape -%}
+    </main>
+    <pagefind-modal data-pagefind-ignore></pagefind-modal>
+    <script src="/static/hl.js"></script>
+    <script>
+      hljs.highlightAll();
+
+      document.getElementById("theme").addEventListener("click", function () {
+        var root = document.documentElement;
+        var dark = root.dataset.theme
+          ? root.dataset.theme === "dark"
+          : matchMedia("(prefers-color-scheme: dark)").matches;
+        root.dataset.theme = dark ? "light" : "dark";
+        try {
+          localStorage.setItem("theme", root.dataset.theme);
+        } catch (_) {}
+      });
+    </script>
+  </body>
+</html>

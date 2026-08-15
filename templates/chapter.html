@@ -1,0 +1,15 @@
+<h1>{{ title }}</h1>
+{%- if description %}
+<p class="lede">{{ description }}</p>
+{%- endif %}
+{%- autoescape false -%}
+{{ yocaml_body }}
+{%- endautoescape -%}
+<nav class="pager" data-pagefind-ignore>
+  {%- if prev %}
+  <a class="prev" href="{{ prev.url }}"><span>Previous</span>{{ prev.title }}</a>
+  {%- endif %}
+  {%- if next %}
+  <a class="next" href="{{ next.url }}"><span>Next</span>{{ next.title }}</a>
+  {%- endif %}
+</nav>

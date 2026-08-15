@@ -1,0 +1,11 @@
+(executable
+ (name catalog)
+ (modes js)
+ (libraries brr))
+
+(rule
+ (target catalog.js)
+ (mode promote)
+ (deps catalog.bc.js)
+ (action
+  (copy catalog.bc.js catalog.js)))

@@ -1,0 +1,17 @@
+opam-version: "2.0"
+synopsis: "A book about writing unikernels in OCaml"
+maintainer: "Romain Calascibetta <romain.calascibetta@gmail.com>"
+authors: "Romain Calascibetta <romain.calascibetta@gmail.com>"
+license: "ISC"
+depends: [
+  "ocaml" {>= "5.1.1"}
+  "dune" {>= "3.18"}
+  "cmarkit" {>= "0.4.0"}
+  "yocaml" {>= "3.0.0"}
+  "yocaml_jingoo" {>= "3.0.0"}
+  "yocaml_unix" {>= "3.0.0"}
+  "yocaml_yaml" {>= "3.0.0"}
+  "brr"
+  "js_of_ocaml-compiler"
+]
+build: [ "dune" "build" "-p" name "-j" jobs ]
