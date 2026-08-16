@@ -198,7 +198,7 @@ let show state = match state.health with
   > ^ <  [Health: %ld/100]
 |text} state.boots (Int32.min state.health 100l)
 
-let run feed = Mkernel.(run [ block "bootagotchi" ] @@ fun blk () ->
+let run feed = Mkernel.(run [ block "bootagotchi" ]) @@ fun blk () ->
   let state = decode blk in
   let state = { state with health= Int32.add state.health feed } in
   show state;
