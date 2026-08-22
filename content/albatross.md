@@ -217,7 +217,7 @@ The amount of block storage is 2GB (= 2048MB).
 --block 2048
 ```
 
-The name, and that in total, 5 unikernels are allowed.
+The name - cherry - and that in total 5 unikernels can be deployed.
 ```
 cherry 5
 ```
