@@ -24,7 +24,9 @@ shell access.
 Core concepts of Albatross are the principle of least astonishment, and least
 privileges. A lot of care has been taken so that a restart of Albatross (or the
 machine running Albatross) does not mean that the unikernels need to be manually
-restarted.
+restarted. Albatross will automatically create the virtual network cables (also
+called "tap" devices) for the unikernels, and destroy them when the unikernels
+have exited.
 
 ## Installation of Albatross
 
@@ -47,7 +49,9 @@ For FreeBSD, we as well provide binary packages at [pkg.robur.coop](https://pkg.
 
 ## Configuration
 
-The binary packages install systemd (and rc.d) scripts to run Albatross. There's not much need for configuration in `albatross_daemon`, neither for `albatross_console`. The `albatross_stats` can report metrics to Influx using the `--metrics <IP:[PORT]>` argument.
+The binary packages install systemd (and rc.d) scripts to run Albatross. There's not much need for configuration in `albatross_daemon`, neither for `albatross_console`.
+
+Later we will dive more into the `albatross_stats` daemon, which can report metrics to InfluxDB, and `albatross_tls_endpoint`, which takes care about remote management.
 
 ## Run your first unikernel with Albatross
 
@@ -96,6 +100,148 @@ You can add your physical network device to the "service" bridge, and use public
 
 On Linux, add `up ip link set dev enp0s20f0 master service` in `/etc/network/interfaces` (replace enp0s20f0 with your ethernet interface).
 
-## Setup your first networking unikernel
+## Setting up immuable - a unikernel serving files via HTTP
 
-Run `albatross-client create network --net service network.hvt --arg='--ipv4=10.0.42.2/24' --arg='--ipv4-gateway=10.0.42.1'` to create your network unikernel. Thereafter, you can access `http://your-server-ip/` to see the service on port 80.
+To setup [immuable](https://github.com/dinosaure/immuable), please first follow the instructions to compile it.
+
+Immuable requires a block device and a network device. Once you have prepared the data (in `pack.pack`), you can use `albatross-client` to create the block device for you:
+
+::: annotate
+
+We use the `create-block` subcommand for creating a block device.
+
+```
+albatross-client create-block
+```
+
+We specify the data to fill the block device with.
+```
+--data=pack.pack
+```
+
+We specify the name of the block device.
+```
+archive
+```
+
+We finally specify the size in MB that the block device should be.
+```
+$(du -m pack.pack|cut -f1)
+```
+
+:::
+
+You can check your block devices with `albatross-client block`.
+
+As the next step, we execute the immuable unikernel:
+
+```
+albatross-client create immuable --block archive --net service immuable.hvt --arg='--ipv4=10.0.42.2/24' --arg='--ipv4-gateway=10.0.42.1'
+```
+
+Thereafter, you can access `http://your-server-ip/` to see immuable on port 80.
+
+You can as well observe the running unikernels with `albatross-client info`.
+
+## Setting up annuaire - a DNS resolver
+
+To test whether your unikernels have Internet connectivity, get and compile [annuaire](https://github.com/dinosaure/annuaire).
+
+Once you set them up:
+
+```
+albatross-client create pagejaune \
+  --net service pagejaune.hvt \
+  --arg='--ipv4=10.0.42.3/24' --arg='--ipv4-gateway=10.0.42.1' \
+  --arg='--domain foo.local' --arg='--tls-lifetime 1h' --arg='--seed foo='
+```
+
+and (requiring another block device named ban):
+
+```
+albatross-client create pageblanche \
+  --net service --block ban pageblanche.hvt \
+  --arg='--ipv4=10.0.42.4/24' --arg='--ipv4-gateway=10.0.42.1' \
+  --arg='--domain bar.local' \
+  --arg="--pagejaune '10.0.42.3!foo.local!foo='" \
+  --arg='--seed bar='
+```
+
+You will be able to ask `pageblanche` for DNS records: `dig robur.coop @10.0.42.4`.
+
+## Remote management and policies
+
+When you are privileged enough to have a own server, you may want to share your resources with your friends. This is possible with albatross thanks to remote management and policies.
+
+The `albatross_tls_endpoint` can be started to listen for remote `albatross-client` commands to create and destroy, or observe unikernels. You can hand out certificates to other people and organizations so they can manage their own unikernels on your server.
+
+We first configure this daemon using a TLS certificate. We will setup our own certificate authority for this purpose - which we will as well use to grant our friends access with specific resource policies.
+
+We generate a fresh CA (named "unikernels") for the server "turtle".
+```
+albatross-client generate --server=turtle unikernels ca.db
+```
+
+Thereafter, various files have been created - `turtle.pem` and `turtle.key` - the certificate and private key for `albatross_tls_endpoint`, the `unikernels.key` and `unikernels.pem` which run our CA (keep the `unikernels.key` secure!). And a database `ca.db` recording which certificates have been handed out.
+
+In the `albatross_tls_endpoint` service script, configure the key (`turtle.key`) and certificate (`turtle.pem`), and the CA certificate (`unikernels.pem`). And start it!
+
+
+As the next step, we will create a resource policy, and allow "cherry" to run 5 unikernels on turtle. A resources policy includes the number of unikernels, the amount of memory, which CPUids someone has access to, which network bridges someone has access to, and how much block storage they may use.
+
+::: annotate
+
+We create a new policy.
+
+```
+albatross-client add-policy --csr
+```
+
+We specify which CPU are accessible.
+```
+--cpu 0 --cpu 1
+```
+
+We allow 1024 MB of memory.
+```
+--mem 1024
+```
+
+The network bridges "service" and "management" are accessible.
+```
+--net service --net management
+```
+
+The amount of block storage is 2GB (= 2048MB).
+```
+--block 2048
+```
+
+The name, and that in total, 5 unikernels are allowed.
+```
+cherry 5
+```
+
+:::
+
+This will create two files, `cherry.csr` and `cherry.key`. The former we need to approve with our unikernels CA:
+
+```
+albatross-client sign unikernels.pem ca.db unikernels.key cherry.csr
+```
+
+This will output the certificate, `cherry.pem`. Whoever has `cherry.pem` and `cherry.key` can deploy unikernels to our server:
+
+```
+albatross-client create -d <server-ip> --ca cherry.pem --ca-key cherry.key \
+  --server-ca unikernels.pem hello hello.hvt
+```
+
+We can also read the console output:
+
+```
+albatross-client console -d <server-ip> --ca cherry.pem --ca-key cherry.key \
+  --server-ca unikernels.pem hello
+```
+
+All the commands above can be extended with `-d .. --ca .. --ca-key .. --server-ca ..`, and will then be executed on a remote machine!
