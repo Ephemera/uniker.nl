@@ -6,7 +6,7 @@ description: How to deploy your unikernels on your server
 At some point, you want to deploy your (or from someone else) unikernel to a
 more permanent computer than your laptop. There are many ways to go this step.
 
-We will explain how to install and use [albatross][albatross] - the
+We will explain how to install and use [albatross][https://github.com/robur-coop/albatross] - the
 orchestration system we developed, which fits well if you have a root server or
 physical machine that you control.
 
@@ -51,7 +51,7 @@ The binary packages install systemd (and rc.d) scripts to run Albatross. There's
 
 ## Run your first unikernel with Albatross
 
-Once `albatross-daemon` and `albatross-console` are running, download a hello-world unikernel (from [our reproducible build server](https://builds.robur.coop/job/hello)).
+Once `albatross-daemon` and `albatross-console` are running, download a hello-world unikernel (from [our reproducible build server](https://builds.robur.coop/job/hello/build/latest/f/bin/hello-key.hvt)).
 
 Now, use `albatross-client create hello hello.hvt` to run it. You can see the output via `albatross-client console hello`.
 
