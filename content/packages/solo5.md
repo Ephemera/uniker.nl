@@ -109,6 +109,8 @@ You can write to the tender's standard output using the `solo5_console_write`
 function. This function operates on a best-effort basis and may potentially
 lose some data.
 
+---
+
 ```c
 typedef enum {
 ```
@@ -151,6 +153,8 @@ The operation failed due to an unspecified error.
 } solo5_result_t;
 ```
 
+---
+
 ```c
 struct solo5_start_info {
 ```
@@ -177,6 +181,8 @@ already initialised at the top of this region and grows downwards.
 
 ```
 
+---
+
 ```c
 int solo5_app_main(const struct solo5_start_info *info);
 ```
@@ -197,6 +203,8 @@ int solo5_app_main(const struct solo5_start_info *info) {
   return (0);
 }
 '''
+
+---
 
 ```c
 
@@ -220,8 +228,7 @@ void solo5_abort(void) __attribute__((noreturn));
 `solo5_abort` is used to shut down the unikernel. The host then returns the
 value 255.
 
-```c
-```
+---
 
 ### Thread Local Storage
 
@@ -231,6 +238,8 @@ uintptr_t solo5_tls_tp_offset(uintptr_t tls);
 solo5_result_t solo5_tls_init(uintptr_t tls);
 solo5_result_t solo5_set_tls_base(uintptr_t base);
 ```
+
+---
 
 ```c
 typedef uint64_t solo5_time_t;
@@ -247,8 +256,7 @@ Solo5 implements two clocks:
 
 The elapsed time `solo5_time_t` is given in nanoseconds.
 
-```c
-```
+---
 
 ```c
 solo5_time_t solo5_clock_monotonic(void);
@@ -264,8 +272,7 @@ In other words, this clock is useful if you can calculate or estimate a short
 period of time (less than a day), but it becomes out of sync over longer
 periods.
 
-```c
-```
+---
 
 ```c
 solo5_time_t solo5_clock_wall(void);
@@ -275,8 +282,7 @@ The wall clock is therefore more accurate than the monotonic clock. However,
 depending on the backend, a hypercall may be executed, which makes this clock
 run slower.
 
-```c
-```
+---
 
 ### Input/Output
 
@@ -287,8 +293,7 @@ available and connected via the tender being used. These devices are
 - `block` devices (which correspond to areas where pages can be read from and
   written to: which, in practical terms, may correspond to SATA sockets).
 
-```c
-```
+---
 
 ```c
 typedef uint64_t solo5_handle_t;
@@ -298,8 +303,7 @@ These devices are represented on the unikernel side by a `solo5_handle_t`. It
 is through these values that the unikernel can interact with these devices. You
 can obtain such a value using the `solo5_*_acquire` functions.
 
-```c
-```
+---
 
 ```c
 #define SOLO5_NET_ALEN 6
@@ -330,8 +334,7 @@ $ solo5-hvt --net:service=tap0 --net-mac:service=11:7e:cf:4b:e7:db \
   -- unikernel.hvt
 '''
 
-```c
-```
+---
 
 ```c
 solo5_result_t solo5_net_acquire(const char *name, solo5_handle_t *handle,
@@ -344,8 +347,7 @@ properties of the network device are stored in `*info`. Caller must supply
 space for `struct solo5_net_info` in `info`. This function may only be called
 once for each device `name`. Subsequent calls will return `SOLO5_R_EINVAL`.
 
-```c
-```
+---
 
 ```c
 solo5_result_t solo5_net_write(solo5_handle_t handle, const uint8_t *buf,
@@ -359,8 +361,7 @@ transient error (e.g. no resources available) it will be silently dropped.
 The maximum allowed value for `size` is `solo5_net_info.mtu + SOLO5_NET_HLEN`.
 The packet must include the ethernet frame header.
 
-```c
-```
+---
 
 ```c
 solo5_result_t solo5_net_read(solo5_handle_t handle, uint8_t *buf, size_t size,
@@ -375,8 +376,7 @@ If not packets are available, it returns `SOLO5_R_AGAIN`. Otherwise, it returns
 `SOLO5_R_OK` and the size of the received packet including the ethernet frame
 header in `*read_size`.
 
-```c
-```
+---
 
 #### Block device
 
