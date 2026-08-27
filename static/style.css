@@ -415,6 +415,15 @@ main > pre {
 
 .row { display: contents; }
 
+.annotate > .rule,
+.document > .rule {
+  grid-column: 1 / -1;
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0.25rem 0 1.5rem;
+}
+
 .annotate .note,
 .annotate .code,
 .document .code,
@@ -774,6 +783,9 @@ a.person:hover { color: var(--accent); }
 
   .annotate .note,
   .document .doc { padding-bottom: 0.5rem; }
+
+  .annotate > .rule,
+  .document > .rule { margin: 0.25rem 0 1.5rem; }
 
   .meta > div { flex-direction: column; gap: 0.15rem; }
   .meta dt { width: auto; }
