@@ -149,6 +149,11 @@ let state =
   |+ field beint32 (fun t -> t.health)
   |> sealr
 
+let (decode, encode) =
+  let encode = Bin.Staged.unstage (Bin.encode_bstr state)
+  and decode = Bin.Staged.unstage (Bin.decode_bstr state) in
+  (decode, encode)
+
 let encode blk value =
   let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
 ```
@@ -165,13 +170,13 @@ smaller than a sector.
                        device (its sector is too small)" in
   Option.iter fn size;
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
-  Bin.encode_bstr state value bstr (ref 0);
+  encode value bstr (ref 0);
   Mkernel.Block.atomic_write blk ~dst_off:0 bstr
 
 let decode blk =
   let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
-  match Bin.decode_bstr state bstr (ref 0) with
+  match decode bstr (ref 0) with
   | value -> value
   | exception _ -> Fmt.failwith "Invalid block device"
 ```
@@ -190,7 +195,7 @@ let show state = match state.health with
  ( x.x ) [Boot #%ld]
   > ^ <
 |text} state.boots
-  | n ->
+  | _ ->
     Fmt.pr
 {text| 
   /\_/\
@@ -276,7 +281,7 @@ So we can now follow our workflow and run our unikernel!
 
 ```shell
 $ unic -r . -x _build -x vendors > _mfetch
-$ mfetch
+$ mfetch --with-dune-file
 bin                              ok (bin, bstr)
 mkernel                          ok
 $ dune build
@@ -374,7 +379,7 @@ cancelled after 5 seconds.
 ```ocaml
   let prm0 = Miou.async @@ fun () -> loop _500ms "." in
   let prm1 = Miou.async @@ fun () -> loop _1s "o" in
-  let prm3 = Miou.asycn @@ fun () ->
+  let prm3 = Miou.async @@ fun () ->
     Mkernel.sleep _5s;
     print_endline "Bing!" in
   Miou.await_first [ prm0; prm1; prm3 ] |> or_raise
