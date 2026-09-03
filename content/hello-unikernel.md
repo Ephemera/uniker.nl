@@ -103,7 +103,7 @@ $ solo5-hvt main.hvt
   __|  _ \  |  _ \ __ \
 \__ \ (   | | (   |  ) |
 ____/\___/ _|\___/____/
-Solo5: Bindings version v0.12.0
+Solo5: Bindings version v0.13.0
 Solo5: Memory map: 512 MB addressable:
 Solo5:   reserved @ (0x0 - 0xfffff)
 Solo5:       text @ (0x100000 - 0x104fff)

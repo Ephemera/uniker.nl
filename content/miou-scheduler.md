@@ -165,8 +165,8 @@ let perform
   = fun todo -> function
   | Spawn fn ->
     let promise = ref None in
-    let task = Initial (fun () -> value := Some (fn ())) in
-    `Continue value, todo @ [ Task task ]
+    let task = Initial (fun () -> promise := Some (Ok (fn ()))) in
+    `Continue promise, todo @ [ Task task ]
   | Await value -> begin match !value with
     | Some value -> `Continue value, todo
     | None -> `Yield, todo end
@@ -179,12 +179,13 @@ new version of the task is created.
 ```ocaml
 let step todo = function
   | Initial fn ->
-    Effect.Shallow.(continue_with fn () handler), todo
+    let k = Effect.Shallow.fiber fn in
+    Effect.Shallow.(continue_with k () handler), todo
   | Resolved _ as value -> value, todo
-  | Suspended (k, effect) ->
-    match perform todo effect with
+  | Suspended (k, eff) ->
+    match perform todo eff with
     | `Continue v, todo -> Effect.Shallow.(continue_with k v handler), todo
-    | `Yield, todo -> Suspended (k, effect), todo
+    | `Yield, todo -> Suspended (k, eff), todo
 ```
 
 Finally, the core of our scheduler consists of a loop that continues until
@@ -203,8 +204,8 @@ when there are no more tasks to do).
 
 ```ocaml
   let rec go = function
-    | [] -> Option.get !result
-    | Task task :: rest ->
+    | [] -> ()
+    | Task task :: todo ->
       let state, todo = step todo task in
       match state with
 ```
@@ -325,7 +326,7 @@ is no such parent-child relationship between the two, Miou raises the
     let q = Queue.create () in
     let promise0 = Miou.async @@ fun () ->
       let sub = Miou.async (Fun.const ()) in
-      Queue.push q sub;
+      Queue.push sub q;
       Miou.await_exn sub in
     let promise1 = Miou.async @@ fun () ->
       while Queue.is_empty q do Miou.yield () done;
@@ -515,7 +516,7 @@ Here, we wait for our shared queue to have some actions to process.
     done;
     let actions = Queue.to_seq t.queue in
     let actions = List.of_seq actions in
-    Queue.clean t.queue;
+    Queue.clear t.queue;
     actions in
   let fn = function
     | Print str -> print_endline str in
@@ -547,7 +548,7 @@ the action to our queue and waking up our daemon if it is in a waiting state.
 ```ocaml
 let put elt t = Miou.Mutex.protect t.mutex @@ fun () ->
   Queue.push elt t.queue;
-  Miou.Condition.signal t.condition 
+  Miou.Condition.signal t.condition
 
 let () = Miou.run @@ fun () ->
   let state, daemon = daemon () in
@@ -624,7 +625,7 @@ let handler socket =
   let resource = Miou.Ownership.create ~finally socket in
   Miou.Ownership.own resource;
   let rec go () =
-    let len = Miou_unix.read socket tmp 0 0x7ff in
+    let len = Miou_unix.read socket tmp ~off:0 ~len:0x7ff in
     if len > 0 then begin
       let str = Bytes.sub_string tmp 0 len in
       Miou_unix.write socket str;
@@ -668,7 +669,7 @@ parent task - in this case, our main task.
 ```ocaml
     Miou.Ownership.transfer resource in
   let promise1 = Miou.async @@ fun () ->
-    Miou_unix.select 10.; raise Timeout in
+    Miou_unix.sleep 10.; raise Timeout in
   match Miou.await_first [ promise0; promise1 ] with
   | Ok () -> socket
   | Error Timeout -> failwith "Timeout"

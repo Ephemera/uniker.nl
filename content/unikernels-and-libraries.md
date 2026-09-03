@@ -39,7 +39,7 @@ let () =
 ```shell
 $ mkdir vendors
 $ opam source digestif --dir vendors/digestif
-$ dune build
+$ dune build ./main.exe
 $ solo5-hvt _build/solo5/main.exe --solo5:quiet
 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069
 ```
@@ -76,7 +76,7 @@ download the dependencies.
 $ rm -rf vendors
 $ unic infer -r -x _build -x vendors . --prefer digestif.c > _mfetch
 $ opam install mfetch
-$ mfetch
+$ mfetch --with-dune-file
 digestif                         ok
 $ dune build
 ```

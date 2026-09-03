@@ -107,13 +107,13 @@ $ solo5-hvt _build/solo5/main.exe
   __|  _ \  |  _ \ __ \
 \__ \ (   | | (   |  ) |
 ____/\___/ _|\___/____/
-Solo5: Bindings version v0.12.0
+Solo5: Bindings version v0.13.0
 Solo5: Memory map: 512 MB addressable:
 Solo5:   reserved @ (0x0 - 0xfffff)
-Solo5:       text @ (0x100000 - 0x1b9fff)
-Solo5:     rodata @ (0x1ba000 - 0x1e8fff)
-Solo5:       data @ (0x1e9000 - 0x441fff)
-Solo5:       heap >= 0x442000 < stack < 0x20000000
+Solo5:       text @ (0x100000 - 0x1b8fff)
+Solo5:     rodata @ (0x1b9000 - 0x1e7fff)
+Solo5:       data @ (0x1e8000 - 0x440fff)
+Solo5:       heap >= 0x441000 < stack < 0x20000000
 Hello World!
 Solo5: solo5_exit(0) called
 ```

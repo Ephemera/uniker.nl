@@ -62,7 +62,7 @@ Next, we'll use `ocamlfind`, a utility that orchestrates the OCaml compiler
 
 :::annotate
 ```shell
-$ ocamlfind opt -toolchain solo5 -c startup.c -o startup.o
+$ ocamlfind -toolchain solo5 opt -c startup.c -o startup.o
 ```
 
 Note the `manifest.o` file that was built [earlier][earlier], as well as the
@@ -70,7 +70,7 @@ Note the `manifest.o` file that was built [earlier][earlier], as well as the
 be malformed.
 
 ```shell
-$ ocamlfind opt -toolchain solo5 startup.o manifest.o main.ml \
+$ ocamlfind -toolchain opt solo5 startup.o manifest.o main.ml \
   -cclib "-z solo5-abi=hvt" -o main.hvt
 ```
 
@@ -89,7 +89,7 @@ $ solo5-hvt main.hvt
   __|  _ \  |  _ \ __ \
 \__ \ (   | | (   |  ) |
 ____/\___/ _|\___/____/
-Solo5: Bindings version v0.12.0
+Solo5: Bindings version v0.13.0
 Solo5: Memory map: 512 MB addressable:
 Solo5:   reserved @ (0x0 - 0xfffff)
 Solo5:       text @ (0x100000 - 0x150fff)
@@ -112,11 +112,11 @@ OCaml libraries compiled using your default compiler (and installed via OPAM)
 within your unikernel:
 
 ```ocaml
-let () = Fmt.pr "Hello World!"
+let () = Fmt.pr "Hello World!\n%!"
 ```
 
 ```shell
-$ ocamlfind opt -toolchain solo5 -linkpkg -package fmt \
+$ ocamlfind -toolchain solo5 opt -linkpkg -package fmt \
   startup.o manifest.o main.ml \
   -cclib "-z solo5-abi=hvt" -o main.hvt 
 ```
