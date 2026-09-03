@@ -112,7 +112,7 @@ There are several arguments for our TCP/IP stack (including the option to use
 IPv6 or to have an IP address assigned by a DHCP server). Here, we'll keep
 things fairly simple and assign a static IPv4 address.
 
-```shell
+```ocaml
   let cidrv4 = Ipaddr.V4.Prefix.of_string_exn "10.0.0.2/24" in
   let stack = Mnet.stack ~name:"service" cidrv4 in
   Mkernel.(run [ rng; stack ]) @@ fun rng (stack, _tcp, _udp) () ->

@@ -25,7 +25,7 @@ attack surface for security threats.
 This is where unikernels emerge as a radical alternative: the application
 effectively **becomes** the kernel. There is no longer any separation between
 the user space and the OS. The application is the only process running within
-this isolated environment, interacting with virtual devices provided by a
+an isolated environment, interacting with virtual devices provided by a
 hypervisor. A unikernel is therefore a hyper-specialized operating system whose
 sole purpose is to run your specific application, and nothing else.
 

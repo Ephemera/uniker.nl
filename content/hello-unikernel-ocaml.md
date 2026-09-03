@@ -5,7 +5,7 @@ description: OCaml is better than C
 
 C is a good language for low-level programming, which is why Solo5 is
 implemented in C, but we would like to switch to a much 'safer' and more
-expressive language, namely OCaml. To this end, we are developing and
+expressive language, namely [OCaml][ocaml]. To this end, we are developing and
 maintaining a modified version of the OCaml compiler, available here:
 [ocaml-solo5][ocaml-solo5]. This compiler can be installed via:
 
@@ -65,9 +65,10 @@ Next, we'll use `ocamlfind`, a utility that orchestrates the OCaml compiler
 $ ocamlfind opt -toolchain solo5 -c startup.c -o startup.o
 ```
 
-Note the `manifest.o` file that was built
-[earlier][earlier], as well as the `-cclib "-z solo5-abi=hvt"` option. Without these options, the unikernel would be
-malformed.
+Note the `manifest.o` file that was built [earlier][earlier], as well as the
+`-cclib "-z solo5-abi=hvt"` option. Without these options, the unikernel would
+be malformed.
+
 ```shell
 $ ocamlfind opt -toolchain solo5 startup.o manifest.o main.ml \
   -cclib "-z solo5-abi=hvt" -o main.hvt
@@ -79,7 +80,9 @@ $ ocamlfind opt -toolchain solo5 startup.o manifest.o main.ml \
 
 ## Execution
 
-Just like our previous unikernel, all you need to do is run our unikernel using `solo5-hvt`:
+Just like our previous unikernel, all you need to do is run our unikernel using
+`solo5-hvt`:
+
 ```shell
 $ solo5-hvt main.hvt
             |      ___|
@@ -126,3 +129,4 @@ unikernels.
 
 [ocaml-solo5]: https://github.com/mirage/ocaml-solo5
 [earlier]: /hello-unikernel/#a-solo5-manifest
+[ocaml]: https://ocaml.org/

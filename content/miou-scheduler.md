@@ -3,13 +3,12 @@ title: Miou, a simple scheduler for unikernels
 description: The first piece of our unikernel
 ---
 
-[Miou][miou] is a simple scheduler written in pure OCaml (whose priority queue
-has been proven via the [VOCAL][vocal] project) that allows tasks to be
-launched cooperatively: the aim is to have several tasks running _at the same
-time_ so that, for example, our unikernel can handle several clients _at the
-same time_ (in reality, these tasks do not run simultaneously as we only have a
-single vCPU available for our unikernel, but the scheduler seizes opportunities
-to execute some of our tasks whilst others are blocked).
+[Miou][miou] is a simple scheduler written in pure OCaml that allows tasks to
+be launched cooperatively: the aim is to have several tasks running _at the
+same time_ so that, for example, our unikernel can handle several clients _at
+the same time_ (in reality, these tasks do not run simultaneously as we only
+have a single vCPU available for our unikernel, but the scheduler seizes
+opportunities to execute some of our tasks whilst others are blocked).
 
 In this chapter, we will first attempt to create our own scheduler from scratch
 in order to understand what a scheduler does. Next, we will introduce you to
@@ -460,7 +459,7 @@ clients are properly released at this _sweet spot_.
 ```
 
 And for every new customer, we create a new task to manage them. This task can
-be ignored as it is stored in the `orphans` we give it.
+be ignored as it is stored in the given `orphans`.
 
 ```ocaml
     let _ = Miou.async ~orphans (fun () -> handle_client socket) in
@@ -468,6 +467,12 @@ be ignored as it is stored in the `orphans` we give it.
   go (Miou.orphans ())
 ```
 :::
+
+`orphans` also adheres to the rules on parentage in the sense that this value
+should not be manipulated by any task other than the one that _spawns_ the
+subtasks. Generally speaking, just as `Miou.await` is never far from
+`Miou.async`, `orphans` is never far away and rarely extends beyond the lexical
+scope of where it was created.
 
 ### Daemon
 

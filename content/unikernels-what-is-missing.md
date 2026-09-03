@@ -7,11 +7,11 @@ The unikernel approach is fundamentally radical in that the developer
 ultimately has very little interaction with the outside world (compared to
 POSIX). These interactions are:
 - reading and writing an Ethernet frame
-- reading and writing a page on a ‘block device’
+- reading and writing a page on a 'block device'
 - shutting down the unikernel
 
 So there are only five possible interactions (hence the name Solo5) with
-elements external to the unikernel. This is where the ‘kernel’ part begins, as
+elements external to the unikernel. This is where the 'kernel' part begins, as
 we need to be able to have:
 - a scheduler
 - a TCP/IP stack

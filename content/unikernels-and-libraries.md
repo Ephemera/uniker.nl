@@ -10,9 +10,10 @@ difficulty other than specifying that library in the `(libraries ...)` section
 of `dune`. This is mainly because `ocaml-solo5` compiles OCaml files in the
 same way as your host compiler. However, this is not the case for C files.
 
-Let's take the `digestif` library as an example. It is used to calculate hashes
-and, naturally, is implemented in C. If we were to use it in our unikernel, we
-would encounter a surprising and difficult-to-reproduce runtime error.
+Let's take the [`digestif`][digestif] library as an example. It is used to
+calculate hashes and, naturally, is implemented in C. If we were to use it in
+our unikernel, we would encounter a surprising and difficult-to-reproduce
+runtime error.
 
 ### Vendoring
 
@@ -74,6 +75,7 @@ download the dependencies.
 ```shell
 $ rm -rf vendors
 $ unic infer -r -x _build -x vendors . --prefer digestif.c > _mfetch
+$ opam install mfetch
 $ mfetch
 digestif                         ok
 $ dune build
@@ -95,3 +97,5 @@ At this stage, we have practically everything we need to develop unikernels in
 OCaml. The question now is: what, and how? In the following chapters, we will
 explore the use of certain libraries that will help you create your own
 unikernels.
+
+[digestif]: https://github.com/mirage/digestif

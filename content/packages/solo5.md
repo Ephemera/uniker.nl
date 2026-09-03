@@ -93,6 +93,79 @@ $ pkg install solo5 albatross
 
 ## How to use it?
 
+Solo5 provides a toolchain for building a C unikernel, as well as a tool for
+running this unikernel called `solo5-hvt`. Here is a brief example of how to
+create a C unikernel. You must first implement the **solo5_app_main** function,
+which is known as the first entry point of a Solo5 application.
+
+```c
+#include "solo5.h"
+
+const char hello_world[] = "Hello World!\n";
+
+int solo5_app_main(const struct solo5_start_info *si) {
+  solo5_console_write(hello_world, sizeof(hello_world));
+  return (0);
+}
+```
+
+A unikernel always requires a manifest listing the devices it wishes to use:
+Solo5 does not _discover_ devices, but expects the devices described in its
+manifest to be available. In this case, we are going to create a JSON file for
+which we do not have any devices.
+
+```json
+{
+  "type": "solo5.manifest",
+  "version": 1,
+  "devices": []
+}
+```
+
+We can now compile our unikernel using these two files and Solo5:
+
+:::annotate
+
+```shell
+$ x86_64-solo5-none-static-cc -c main.c -o main.o
+$ solo5-elftool gen-manifest manifest.json manifest.c
+$ x86_64-solo5-none-static-cc -c manifest.c -o manifest.o
+```
+
+Solo5 offers several ABIs: `hvt` (if you want to run the unikernel with
+`solo5-hvt`), `xen` (if you want to run the unikernel with the [Xen
+hypervisor][xen]), `virtio` (if you can run the unikernel with [`qemu`][qemu]).
+There is also support for [Muen][muen].
+
+```shell
+$ x86_64-solo5-none-static-ld -z solo5-abi=hvt manifest.o main.o -o main.hvt
+```
+
+:::
+
+Since we have compiled our unikernel with the `hvt` ABI, we can now run our
+unikernel using `solo5-hvt`. Please note that you must have the necessary
+permissions to run a unikernel. On Linux, you simply need to be a member of the
+`kvm` group.
+
+```shell
+$ sudo usermod -aG kvm $USER
+$ solo5-hvt main.hvt
+            |      ___|
+  __|  _ \  |  _ \ __ \
+\__ \ (   | | (   |  ) |
+____/\___/ _|\___/____/
+Solo5: Bindings version v0.12.0
+Solo5: Memory map: 512 MB addressable:
+Solo5:   reserved @ (0x0 - 0xfffff)
+Solo5:       text @ (0x100000 - 0x104fff)
+Solo5:     rodata @ (0x105000 - 0x105fff)
+Solo5:       data @ (0x106000 - 0x30afff)
+Solo5:       heap >= 0x30b000 < stack < 0x20000000
+Hello World!
+Solo5: solo5_exit(0) called
+```
+
 ## API
 
 Solo5 offers several functions available within your unikernel. These are all
@@ -232,12 +305,65 @@ value 255.
 
 ### Thread Local Storage
 
+This implementation of TLS is limited to the [local-exec model][tls-model]
+(offset directly from the `TLS_BASE` register) which is how Solo5 currently use TLS.
+The usage is as the following for each thread:
+
+'''c
+// define a TLS block
+uintptr_t tcb1;
+// get memory
+tcb1 = (uintptr_t) calloc(solo5_tls_size(), sizeof(char));
+// initialize TLS block
+solo5_tls_init(tcb1);
+// set tp ptr
+solo5_set_tls_base(solo5_tls_tp_offset(tcb1));
+'''
+
+For another thread, you just have to:
+
+'''c
+solo5_set_tls_base(solo5_tls_tp_offset(tcb2));
+'''
+
+---
+
 ```c
 size_t solo5_tls_size(void);
+```
+
+Returns the size needed for the thread local storage.
+
+---
+
+```c
 uintptr_t solo5_tls_tp_offset(uintptr_t tls);
+```
+
+Returns the `tp` base addresse for the TLS block.
+
+---
+
+```c
 solo5_result_t solo5_tls_init(uintptr_t tls);
+```
+
+Perform a proper initialisation of the `tls` block (it should be already
+allocated): copy `.tdata` values and set the last bytes correctly.
+
+Solo5 implementations may return `SOLO5_R_EINVAL` if the `tls` does not satisfy
+architecture specific requirements.
+
+---
+
+```c
 solo5_result_t solo5_set_tls_base(uintptr_t base);
 ```
+
+Set the architecture specific TLS base register to `base`.
+
+Solo5 implementations may return `SOLO5_R_EINVAL` if the `base` does not
+satisfy architecture specific requirements.
 
 ---
 
@@ -302,6 +428,31 @@ typedef uint64_t solo5_handle_t;
 These devices are represented on the unikernel side by a `solo5_handle_t`. It
 is through these values that the unikernel can interact with these devices. You
 can obtain such a value using the `solo5_*_acquire` functions.
+
+---
+
+```c
+typedef uint64_t solo5_handle_set_t;
+```
+
+Type for sets of up to 64 I/O handles.
+
+---
+
+```c
+void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set);
+```
+
+Suspends executon of the application until either:
+- monotonic time reaches `deadline`, or
+- at least one network device is ready for input
+
+If `ready_set` is not NULL, it will be filled in with the set of
+`solo5_handle_t`'s ready for input.
+
+This function is generally referred to as the _poll point_ for retrieving
+events relating to devices (namely, the arrival of an Ethernet frame on one of
+our network devices).
 
 ---
 
@@ -387,17 +538,53 @@ struct solo5_block_info {
     solo5_off_t capacity; /* Capacity of block device, bytes */
     solo5_off_t block_size; /* Minimum I/O unit (block size), bytes */
 };
+```
 
+Information relating to a block device when Solo5 is accessing one. The minimum
+unit of I/O which can be performed on a block device is defined by
+`solo5_block_info.block_size` (known as _sector size_). In other words, reading
+and writing take place in sectors (rather than bytes).
+
+---
+
+```c
 solo5_result_t solo5_block_acquire(const char *name, solo5_handle_t *handle,
                                    struct solo5_block_info *info);
+```
+
+Acquire a handle to the block device declared as `name` in the application
+manifest.  The returned handle is stored in `*handle`, and properties of the
+block device are stored in `*info`. Caller must supply space for `struct
+solo5_block_info` in `info`.  This function may only be called once for each
+device `name`. Subsequent calls will return `SOLO5_EINVAL`.
+
+---
+
+```c
 solo5_result_t solo5_block_write(solo5_handle_t handle, solo5_off_t offset,
                                  const uint8_t *buf, size_t size);
+```
+
+Writes data of `size` bytes from the buffer `*buf` to the block device
+identified by `handle`, starting at byte `offset`. Data is either written in
+it's entirety or not at all ("short writes" are not possible).
+
+Both `size` and `offset` must be a multiple of the block size/_sector size_,
+otherwise `SOLO5_R_EINVAL` is returned.
+
+---
+
+```c
 solo5_result_t solo5_block_read(solo5_handle_t handle, solo5_off_t offset,
                                 uint8_t *buf, size_t size);
-
-typedef uint64_t solo5_handle_set_t;
-void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set);
 ```
+
+Reads data of `size` bytes into buffer `*buf` from the block device identified
+by `handle`, starting at byte `offset`.  Always reads the full amount of `size`
+bytes ("short reads" are not possible).
+
+Both `size` and `offset` must be a multiple of the block size/_sector size_,
+otherwise `SOLO5_R_EINVAL` is returned.
 
 :::
 
@@ -407,3 +594,4 @@ void solo5_yield(solo5_time_t deadline, solo5_handle_set_t *ready_set);
 [qemu]: https://www.qemu.org/
 [gce]: https://cloud.google.com/products/compute
 [opam]: https://opam.ocaml.org/
+[tls-model]: https://www.akkadia.org/drepper/tls.pdf

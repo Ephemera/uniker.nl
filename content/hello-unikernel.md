@@ -74,8 +74,8 @@ how to use them:
 
 ```shell
 $ x86_64-solo5-none-static-cc -c main.c -o main.o
-$ x86_64-solo5-none-static-cc -c manifest.c -o manifest.o
 $ solo5-elftool gen-manifest manifest.json manifest.c
+$ x86_64-solo5-none-static-cc -c manifest.c -o manifest.o
 ```
 
 The `-z solo5-abi=hvt` option is specific to Solo5 (and should be ignored by
@@ -117,5 +117,5 @@ Solo5: solo5_exit(0) called
 Well done! You've built your first unikernel.
 
 [solo5]: https://github.com/solo5/solo5
-[solo5-api]: https://github.com/Solo5/solo5/blob/main/include/solo5.h
+[solo5-api]: /packages/solo5/#api
 [opam]: https://opam.ocaml.org/

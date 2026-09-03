@@ -16,8 +16,8 @@ It is through these two types of devices that we obtain four _hypercalls_: that
 is to say, functions that interact with these devices:
 1) read an Ethernet frame
 2) write an Ethernet frame
-3) read a page from a block device
-4) write a page to a block device
+3) read a sector from a block device
+4) write a sector to a block device
 
 This is how `mkernel` essentially offers two things:
 1) integration of these hypercalls with the Miou scheduler
@@ -52,7 +52,7 @@ _block device_:
 
 ```ocaml
 let () = Mkernel.(run [ block "disk" ]) @@ fun blk () ->
-  let bstr = Bstr.create (Mkernel.Block.pagesize blk) in
+  let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
   Fmt.pr "@[<hov>%a@]" (Hxd_string.pp Hxd.default) (Bstr.to_string bstr)
 ```
@@ -96,8 +96,8 @@ $ dune exec ./main.exe > manifest.json
 $ dune build
 ```
 
-Let's create a block device `file.txt`. It must be aligned to our default page
-(512 bytes).
+Let's create a block device `file.txt`. It must be aligned to our default
+sector (512 bytes).
 
 ```shell
 $ echo "Hello World!" > file.txt
@@ -115,7 +115,7 @@ run our unikernel (in this case, "disk").
 
 Next, we associate a file called `file.txt` with it, which contains our "Hello
 World", and we display it using `fmt` and `hxd`. We’ve made a _hypercall_:
-specifically, reading a page (512 bytes) from the given block device.
+specifically, reading a sector (512 bytes) from the given block device.
 
 We also have the complete workflow for developing a unikernel, specifically
 this loop involving adding dependencies, determining what needs to be
@@ -150,26 +150,26 @@ let state =
   |> sealr
 
 let encode blk value =
-  let bstr = Bstr.create (Mkernel.Block.pagesize blk) in
+  let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
 ```
 
 One of the advantages of `Bin` is that it may be able to infer the size of a
 value as it serialises it. Here, we check that what we want to encode is
-smaller than a page.
+smaller than a sector.
 
 ```ocaml
   let size = Bin.size_of_value state value in
   let fn size =
-    if size > Mkernel.Block.pagesize blk
+    if size > Mkernel.Block.sector_size blk
     then Fmt.failwith "Impossible to encode our state into the given block \
-                       device (its page is too small)" in
+                       device (its sector is too small)" in
   Option.iter fn size;
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
   Bin.encode_bstr state value bstr (ref 0);
   Mkernel.Block.atomic_write blk ~dst_off:0 bstr
 
 let decode blk =
-  let bstr = Bstr.create (Mkernel.Block.pagesize blk) in
+  let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
   match Bin.decode_bstr state bstr (ref 0) with
   | value -> value
@@ -310,9 +310,9 @@ $ solo5-hvt --block:bootagotchi=state.img -- \
 
 And here's our first _bootagotchi_! `Mkernel` provides the most basic
 _hypercalls_ for interacting with block devices. As such, we've also been able
-to develop a library such as [`cachet`][cachet] that allows us to cache page
+to develop a library such as [`cachet`][cachet] that allows us to cache sector
 reads (as the hypercall can be quite costly) whilst also enabling us to write
-values of arbitrary size without being constrained by page boundaries.
+values of arbitrary size without being constrained by sector boundaries.
 
 ### A filesystem for our unikernel
 
@@ -325,7 +325,7 @@ it with `mkernel`:
 module Blk = struct
   type t = Mkernel.Block.t
 
-  let pagesize = Mkernel.Block.pagesize
+  let pagesize = Mkernel.Block.sector_size
   let read = Mkernel.Block.atomic_read
   let write = Mkernel.Block.atomic_write
 end
