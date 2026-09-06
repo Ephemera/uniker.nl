@@ -206,7 +206,7 @@ All you need to do here is simply read using `Mnet.TCP.get` and write using
 `Mnet.TCP.write`.
 
 ```ocaml
-  let rec go () = match Mnet.TCP.get flow with
+  let rec go () = match Mnet.TCP.read flow with
     | Ok sstr ->
       let fn = Mnet.TCP.write flow in
       List.iter fn sstr;
@@ -241,7 +241,8 @@ let () =
 We’re going to set up our service on `10.0.0.2:123`.
 
 ```ocaml
-  let listen = Mnet.TCP.listen tcp 123 in
+  let listen = Mnet.TCP.listen tcp 7 in
+  let kind = Mnet.TCP.direct in
   let rec go orphans =
 ```
 
@@ -251,7 +252,7 @@ clients.
 
 ```ocaml
     clean_up orphans;
-    let flow = Mnet.TCP.accept tcp listen in
+    let flow = Mnet.TCP.accept ~kind tcp listen in
     let _ = Miou.async ~orphans @@ fun () ->
       handler flow in
     go orphans in
@@ -274,7 +275,7 @@ Here, we’re launching a `netcat` client, and we can launch several at the same
 time if we wish.
 
 ```shell
-$ nc -q0 10.0.0.2 123
+$ nc -q0 10.0.0.2 7
 Hello World!
 Hello World!
 ^D
@@ -305,7 +306,7 @@ network.
 
 ```shell
 $ sudo iptables -A FORWARD -i service -o wlan0 -j ACCEPT
-$ sudo iptables -A FORWARD -i wlan0 -o wlan0 -m state \
+$ sudo iptables -A FORWARD -i wlan0 -o service -m state \
   --state RELATED,ESTABLISHED -j ACCEPT
 $ sudo sysctl -w net.ipv4.ip_forward=1
 ```
@@ -321,10 +322,32 @@ website: [https://robur.coop](https://robur.coop).
 
 :::annotate
 
+The `getaddrinfo` function is fairly straightforward; it explains how to
+resolve a DNS record using a `Mnet_dns` instance. We will use this function
+later on to show happy-eyeballs how to resolve domain names.
+
 ```ocaml
+let getaddrinfo dns ty domain_name =
+  match ty with
+  | `A ->
+    let* (_, set) = Mnet_dns.getaddrinfo dns A domain_name in
+    let fn ipv4 set = Ipaddr.Set.add (Ipaddr.V4 ipv4) set in
+    Ok (Ipaddr.V4.Set.fold fn set Ipaddr.Set.empty)
+  | `AAAA ->
+    let* (_, set) = Mnet_dns.getaddrinfo dns Aaaa domain_name in
+    let fn ipv6 set = Ipaddr.Set.add (Ipaddr.V6 ipv6) set in
+    Ok (Ipaddr.V6.Set.fold fn set Ipaddr.Set.empty)
+
 let () =
   let cidrv4 = Ipaddr.V4.Prefix.of_string_exn "10.0.0.2/24" in
-  let stack = Mnet.stack ~name:"service" cidrv4 in
+```
+
+A gateway is now required to tell `mnet` which router to send our packets to if
+we wish to communicate with the Internet.
+
+```ocaml
+  let gateway = Ipaddr.V4.of_string_exn "10.0.0.1" in
+  let stack = Mnet.stack ~name:"service" ~gateway cidrv4 in
   Mkernel.(run [ rng; stack ]) @@ fun rng (stack, tcp, _udp) () ->
   let@ () = fun () -> Mirage_crypto_rng_mkernel.kill rng in
   let@ () = fun () -> Mnet.kill stack in
@@ -347,8 +370,10 @@ now not only capable of handling TCP/IP connections but also of resolving
 domain names.
 
 ```ocaml
-  let dns = Mnet_dns.create (udp, he) in
-  Mnet_happy_eyeballs.inject happy_eyeballs (getaddrinfo dns) in
+  let stack = Mnet_dns.Transport.stack udp happy_eyeballs in
+  let dns = Mnet_dns.create stack in
+  let@ () = fun () -> Mnet_dns.Transport.kill (Mnet_dns.transport dns) in
+  Mnet_happy_eyeballs.inject happy_eyeballs (getaddrinfo dns);
   let uri = "https://robur.coop/" in
   let fn _meta _req _resp buf = function
     | Some str ->

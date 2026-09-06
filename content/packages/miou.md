@@ -111,8 +111,81 @@ Exception: Invalid_argument "The given orphans is owned by another promise"
 '''
 
 ```ocaml
+val call :
+     ?pin:Domain.Uid.t
+  -> ?give:Ownership.t list
+  -> ?orphans:'a orphans
+  -> (unit -> 'a)
+  -> 'a t
+```
+
+`call fn` returns a promise `t` representing the state of the parallel task given as an
+argument. The task will be run in parallel: the domain used to run the task is different
+from the domain with the promise. This assertion is always true:
+
+'''ocaml
+let () = Miou.run @@ fun () ->
+  let p = Miou.call @@ fun () ->
+    let u = Miou.Domain.self () in
+    let q = Miou.call @@ fun () -> Miou.Domain.self () in
+    (u, Miou.await_exn q) in
+  let u, v = Miou.await_exn p in
+  assert (u <> v)
+'''
+
+Sequential calls to `call` do not guarantee that different domains are always chosen.
+This code **may** be true.
+
+'''ocaml
+let () = Miou.run @@ fun () ->
+  let p = Miou.call @@ fun () -> Miou.Domain.self () in
+  let q = Miou.call @@ fun () -> Miou.Domain.self () in
+  let u = Miou.await_exn p in
+  let v = Miou.await_exn q in
+  assert (u = v)
+'''
+
+To ensure that tasks are properly allocated to all domains, you need to use `parallel`.
+
+**NOTE**: `call` will never run a task on _dom0_ (the main domain). Only the other domains
+can manage parallel tasks.
+
+It raises:
+- `No_domain_available` if no domain is to execute the task in parallel or if the function
+  is executed by the only domain available in parallel (it is impossible to assign task to
+  `dom0` from the other domains)
+- `Invalid_argument` like `async`, if the promise want to be associated with an `orphan`,
+  the orphan should be owned by the direct parent.
+
+```ocaml
+```
+
+```ocaml
+val parallel : ('a -> 'b) -> 'a list -> ('b, exn) result list
+```
+
+`parallel fn lst` is the _fork-join_ model: it is a way of setting up and
+executing parallel tasks, such that, such that execution branches off in
+parallel at designated points in the program, to "join" (merge) at a subsequent
+point and resume sequential execution.
+
+Let's take the example of a sequential merge-sorte:
+
+'''ocaml
+let sort ~compare (arr, lo, hi) =
+  if hi - lo >= 2 then begin
+    let mi = (lo + hi) / 2 in
+    sort ~compare (arr, lo, mi);
+    sort ~compare (arr, mi, hi);
+    merge ~compare arr lo mi hi
+  end
+'''
+
+```ocaml
 val orphans : unit -> 'a orphans
 ```
+
+It make a new _orphan collectors_ which can be used by `call` and `async`.
 
 :::
 
