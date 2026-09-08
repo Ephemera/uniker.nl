@@ -22,3 +22,4 @@ parts:
   - title: Deployement of unikernels
     chapters:
       - albatross.md
+      - aussi.md
