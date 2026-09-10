@@ -6,9 +6,10 @@ description: How to deploy your unikernels on your server
 At some point, you want to deploy your (or from someone else) unikernel to a
 more permanent computer than your laptop. There are many ways to go this step.
 
-We will explain how to install and use [albatross](https://github.com/robur-coop/albatross) - the
-orchestration system we developed, which fits well if you have a root server or
-physical machine that you control.
+We will explain how to install and use
+[albatross](https://github.com/robur-coop/albatross) - the orchestration system
+we developed, which fits well if you have a root server or physical machine
+that you control.
 
 Albatross runs on the hypervisor and consists of multiple daemons, the core
 `albatross_daemon` which is executed with superuser privileges and creates,
@@ -65,8 +66,7 @@ remote management.
 ## Run your first unikernel with Albatross
 
 Once `albatross-daemon` and `albatross-console` are running, download a
-hello-world unikernel (from [our reproducible build
-server](https://builds.robur.coop/job/hello/build/latest/f/bin/hello-key.hvt)).
+hello-world unikernel (from [our reproducible build server][hello]).
 
 Now, use `albatross-client create hello hello.hvt` to run it. You can see the
 output via `albatross-client console hello`.
@@ -137,8 +137,8 @@ On Linux, add `up ip link set dev eth0 master service` in
 
 ## Setting up immuable - a unikernel serving files via HTTP
 
-To setup [immuable](https://github.com/dinosaure/immuable), please first follow
-the instructions to compile it.
+To setup [immuable][immuable], please first follow the instructions to compile
+it.
 
 Immuable requires a block device and a network device. Once you have prepared
 the data (in `pack.pack`), you can use `albatross-client` to create the block
@@ -171,7 +171,7 @@ You can as well observe the running unikernels with `albatross-client info`.
 ## Setting up annuaire - a DNS resolver
 
 To test whether your unikernels have Internet connectivity, get and compile
-[annuaire](https://github.com/dinosaure/annuaire).
+[annuaire][annuaire].
 
 Once you set them up:
 
@@ -289,3 +289,7 @@ $ albatross-client console -d <server-ip> --ca cherry.pem --ca-key cherry.key \
 
 All the commands above can be extended with `-d .. --ca .. --ca-key ..
 --server-ca ..`, and will then be executed on a remote machine!
+
+[hello]: https://builds.robur.coop/job/hello-world/build/latest/f/bin/hello.hvt
+[annuaire]: https://github.com/dinosaure/annuaire
+[immuable]: https://github.com/dinosaure/immuable

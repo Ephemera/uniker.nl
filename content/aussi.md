@@ -57,7 +57,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 Let's use last version of `opam`.
 
 ```Dockerfile
-RUN /bin/sh -c "ln -f /usr/bin/opam-2.5 /usr/bin/opam"
+RUN /bin/sh -c "ln -f /usr/bin/opam-dev /usr/bin/opam"
 USER opam
 RUN opam init --reinit --bare --disable-sandboxing -y
 WORKDIR /home/opam

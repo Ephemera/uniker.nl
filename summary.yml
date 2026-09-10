@@ -16,9 +16,9 @@ parts:
       - mkernel.md
       - mnet.md
       - vifu.md
-  - title: Distribute unikernels
+  - title: Build unikernels
     chapters:
-      - distribute.md
+      - reproducibility.md
   - title: Deployement of unikernels
     chapters:
       - albatross.md
