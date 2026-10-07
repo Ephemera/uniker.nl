@@ -23,3 +23,6 @@ parts:
     chapters:
       - albatross.md
       - aussi.md
+  - title: Graphes and monitors
+    chapters:
+      - telegraf.md

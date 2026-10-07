@@ -30,3 +30,5 @@ Finally, `mfetch` can generate a `_mfetch.locked` file containing a description
 (in OPAM format) of the source code the tool has downloaded (including their
 hashes), thereby ensuring the reproducibility of a project using, for example,
 [`orb`][orb].
+
+[orb]: /packages/orb
