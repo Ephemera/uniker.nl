@@ -1,0 +1,142 @@
+{
+  "__inputs": [
+    {
+      "name": "INFLUXDB",
+      "label": "InfluxDB",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
+    }
+  ],
+  "title": "Unikernel",
+  "uid": "unikernel",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "tags": ["unikernel", "ocaml", "gc"],
+  "templating": {
+    "list": [
+      {
+        "name": "vm",
+        "label": "Unikernel",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+        "query": "SHOW TAG VALUES FROM \"gc\" WITH KEY = \"vm\"",
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Heap",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT last(\"heap_words\") * 8 AS \"heap\" FROM \"gc\" WHERE \"vm\" = '$vm' AND $timeFilter GROUP BY time($__interval) fill(none)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Live words",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "area" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT last(\"live_words\") * 8 AS \"live\" FROM \"gc\" WHERE \"vm\" = '$vm' AND $timeFilter GROUP BY time($__interval) fill(none)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Spike",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT last(\"top_heap_words\") * 8 AS \"top_heap\" FROM \"gc\" WHERE \"vm\" = '$vm' AND $timeFilter GROUP BY time($__interval) fill(none)"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Compactions",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+      "fieldConfig": { "defaults": { "unit": "none" }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "graphMode": "none" },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT last(\"compactions\") AS \"compactions\" FROM \"gc\" WHERE \"vm\" = '$vm' AND $timeFilter GROUP BY time($__interval) fill(none)"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "OCaml heap",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 4 },
+      "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT last(\"heap_words\") * 8 AS \"heap\", last(\"live_words\") * 8 AS \"live\", last(\"free_words\") * 8 AS \"free\", last(\"top_heap_words\") * 8 AS \"top_heap\" FROM \"gc\" WHERE \"vm\" = '$vm' AND $timeFilter GROUP BY time($__interval) fill(none)"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Collections",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "datasource": { "type": "influxdb", "uid": "${INFLUXDB}" },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "min": 0, "custom": { "lineWidth": 2 } },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "refId": "A",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "query": "SELECT non_negative_derivative(last(\"minor_collections\"), 1s) AS \"minor\", non_negative_derivative(last(\"major_collections\"), 1s) AS \"major\" FROM \"gc\" WHERE \"vm\" = '$vm' AND $timeFilter GROUP BY time($__interval) fill(none)"
+        }
+      ]
+    }
+  ]
+}

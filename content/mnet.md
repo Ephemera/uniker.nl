@@ -447,3 +447,5 @@ such as [Albatross][albatross] and [Aussi][aussi]!
 [spoke]: https://github.com/dinosaure/spoke
 [albatross]: /packages/albatross
 [aussi]: /packages/aussi
+[utcp]: https://github.com/robur-coop/utcp
+[hol4]: https://hol-theorem-prover.org/
