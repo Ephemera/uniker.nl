@@ -112,15 +112,10 @@ struct
           ~tags:meta#tags)
       pairs
 
-  let artifact_nav ~title section pairs =
-    let entries =
-      Stdlib.List.map
-        (fun (file, meta) ->
-          Model.Nav.entry ~title:meta#name
-            ~url:(Target.artifact_url ~section file))
-        pairs
-    in
-    [ Model.Nav.part ~ordered:false ~title entries ]
+  let summary_nav ~title ~name ~url ~sections =
+    Model.Nav.(
+      mark_current ~url ~sections
+        [ part ~ordered:false ~title [ entry ~title:name ~url ] ])
 
   let attach_shell ~url page =
     let open Eff in
@@ -144,16 +139,10 @@ struct
     let page = page#with_site_nav (site_nav ~url) in
     (page#with_nav nav)#with_neighbours prev next
 
-  let with_artifact_context ~nav ~url page =
+  let with_summary_context ~title ~name ~url ~sections page =
     let open Eff in
     let+ page = attach_shell ~url page in
-    page#with_nav (Model.Nav.mark_current ~url ~sections:None nav)
-
-  let with_catalog_context ~nav ~items ~url page =
-    let open Eff in
-    let+ page = attach_shell ~url page in
-    (page#with_nav (Model.Nav.mark_current ~url ~sections:None nav))#with_items
-      items
+    page#with_nav (summary_nav ~title ~name ~url ~sections)
 
   let process_static = Action.copy_directory ~into:Target.dir Source.static
 
@@ -223,7 +212,7 @@ struct
         >>> drop_first ()
       end
 
-  let process_artifact ~section ~nav file =
+  let process_artifact ~section ~title file =
     let open Task in
     let url = Target.artifact_url ~section file in
     Action.write_static_file
@@ -234,15 +223,17 @@ struct
               (module Model.Artifact)
               file
         >>> second Prose.render
-        >>* (fun (page, (_, content)) ->
+        >>* (fun (page, (sections, content)) ->
         let open Eff in
-        let+ page = with_artifact_context ~nav ~url page in
+        let+ page =
+          with_summary_context ~title ~name:page#name ~url ~sections page
+        in
         (page, content))
         >>> layout (module Model.Artifact) "artifact.html"
         >>> drop_first ()
       end
 
-  let process_catalog ~section ~nav ~items () =
+  let process_catalog ~section ~title ~items () =
     let open Task in
     let url = Target.catalog_url section in
     Action.write_static_file
@@ -253,10 +244,12 @@ struct
               (module Model.Catalog)
               (Source.catalog_file section)
         >>> second Prose.render
-        >>* (fun (page, (_, content)) ->
+        >>* (fun (page, (sections, content)) ->
         let open Eff in
-        let+ page = with_catalog_context ~nav ~items ~url page in
-        (page, content))
+        let+ page =
+          with_summary_context ~title ~name:page#title ~url ~sections page
+        in
+        (page#with_items items, content))
         >>> layout (module Model.Catalog) "catalog.html"
         >>> drop_first ()
       end
@@ -264,13 +257,12 @@ struct
   let process_section ~section ~title () =
     let open Eff in
     let+ pairs = read_artifacts section in
-    let nav = artifact_nav ~title section pairs in
     let items = artifact_items section pairs in
     let each =
       Action.batch_list pairs (fun (file, _) ->
-          process_artifact ~section ~nav file)
+          process_artifact ~section ~title file)
     in
-    let catalog = process_catalog ~section ~nav ~items () in
+    let catalog = process_catalog ~section ~title ~items () in
     fun cache -> each cache >>= catalog
 
   let indexed = ref false
