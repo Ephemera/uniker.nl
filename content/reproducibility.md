@@ -133,7 +133,9 @@ unikernel. Make sure that the repositories match the description provided by
 `opam repository`.
 
 ```shell
-$ orb build --repos="default:https://opam.ocaml.org,overlays:file:///home/$USER/opam-overlays
+$ export REPOS="default:https://opam.ocaml.org"
+$ export REPOS="$REPOS,file:///home/$USER/opam-overlays"
+$ orb build --repos="$REPOS" hello-world
 [ORB] using root "/home/$USER/.opam" and switch "orbf14714temp"
 [overlays] no changes from file:///home/$USER/dev/opam-overlays
 [default] no changes from https://opam.ocaml.org
