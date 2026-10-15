@@ -16,6 +16,7 @@ parts:
       - mkernel.md
       - mnet.md
       - vifu.md
+      - ecosystem-conclusion.md
   - title: Build unikernels
     chapters:
       - reproducibility.md
