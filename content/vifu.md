@@ -36,9 +36,19 @@ I integrate this page **statically** into my unikernel? This is where we
 introduce `vifu`, our OCaml web framework, and `mcrunch`, a tool for generating
 an OCaml module from files that can be statically linked.
 
+### Zarith
+
+We must mention a nuance in the OCaml ecosystem: the need to use a different
+version of `zarith`: specifically, `zarith` with `dune`. Therefore, to compile
+the unikernels, we must `pin` our version of `zarith`.
+
+```shell
+$ opam pin add -y git+https://github.com/mirage/Zarith.git#zarith-1.14
+```
+
 ## Vifu & mcrunch
 
-So we’re going to create a simple **index.html** file:
+So we're going to create a simple **index.html** file:
 
 ```html
 <html>
