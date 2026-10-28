@@ -158,25 +158,23 @@ let encode blk value =
   let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
 ```
 
-One of the advantages of `Bin` is that it may be able to infer the size of a
-value as it serialises it. Here, we check that what we want to encode is
+One of the advantages of `Bin` is that it is able to compute the size of a
+value before serialising it. Here, we check that what we want to encode is
 smaller than a sector.
 
 ```ocaml
   let size = Bin.size_of_value state value in
-  let fn size =
-    if size > Mkernel.Block.sector_size blk
-    then Fmt.failwith "Impossible to encode our state into the given block \
-                       device (its sector is too small)" in
-  Option.iter fn size;
+  if size > Mkernel.Block.sector_size blk
+  then Fmt.failwith "Impossible to encode our state into the given block \
+                     device (its sector is too small)";
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
-  encode value bstr (ref 0);
+  encode value bstr (ref Bin.Off.zero);
   Mkernel.Block.atomic_write blk ~dst_off:0 bstr
 
 let decode blk =
   let bstr = Bstr.create (Mkernel.Block.sector_size blk) in
   Mkernel.Block.atomic_read blk ~src_off:0 bstr;
-  match decode bstr (ref 0) with
+  match decode bstr (ref Bin.Off.zero) with
   | value -> value
   | exception _ -> Fmt.failwith "Invalid block device"
 ```
@@ -223,7 +221,7 @@ let term =
 
 let cmd = Cmd.v (Cmd.info "bootagotchi") term
 
-let () = Cmd.(exit @@ eval' cmd)
+let () = Cmd.(exit @@ eval cmd)
 ```
 
 We're going to add our `dune` file to our project. This will use a trick to
