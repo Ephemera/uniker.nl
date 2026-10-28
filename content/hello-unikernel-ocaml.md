@@ -70,7 +70,7 @@ Note the `manifest.o` file that was built [earlier][earlier], as well as the
 be malformed.
 
 ```shell
-$ ocamlfind -toolchain opt solo5 startup.o manifest.o main.ml \
+$ ocamlfind -toolchain solo5 opt startup.o manifest.o main.ml \
   -cclib "-z solo5-abi=hvt" -o main.hvt
 ```
 
